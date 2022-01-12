@@ -69,11 +69,13 @@ unsafe extern "C" fn on_data(dr: dds_entity_t, arg: *mut std::os::raw::c_void) {
         [std::ptr::null_mut(); MAX_SAMPLES as usize];
     samples[0] = std::ptr::null_mut();
 
+
+    use std::convert::TryInto;
     let n = dds_take(
         dr,
         samples.as_mut_ptr() as *mut *mut raw::c_void,
         si.as_mut_ptr() as *mut dds_sample_info_t,
-        MAX_SAMPLES.into(),
+        MAX_SAMPLES.try_into().unwrap(),
         MAX_SAMPLES,
     );
     for i in 0..n {
@@ -211,6 +213,10 @@ unsafe extern "C" fn data_forwarder_listener(dr: dds_entity_t, arg: *mut std::os
                     .await
             });
             (*zp).payload = std::ptr::null_mut();
+        }
+        else
+        {
+            log::trace!("Route data from DDS failed !valid_data {} to zenoh key={}", &(*pa).0, &(*pa).1);
         }
         cdds_serdata_unref(zp as *mut ddsi_serdata);
     }
